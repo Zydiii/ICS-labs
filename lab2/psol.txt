@@ -1,0 +1,7 @@
+When I get angry, Mr. Bigglesworth gets upset.
+0 12 24 0 12 24
+3 t 75
+10 austinpowers
+4 56
+2 3 1 6 4 5
+22

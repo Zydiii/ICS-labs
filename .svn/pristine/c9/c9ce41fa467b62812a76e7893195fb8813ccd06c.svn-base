@@ -1,0 +1,264 @@
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Include your name and ID here.
+# Zhang Yuandi
+# 517030910230
+# Describe how and why you modified the baseline code.
+# 1. use iaddq -> Average CPE	12.70
+# 2. loop unrolling 8 -> Average CPE	9.16
+# 3. loop unrolling 8 4 2 1 -> Average CPE	9.00
+# 4. loop unrolling >=8 -> >=4 -> >=2 -> 1  Remove unnecessary parts of jump -> Average CPE	8.24
+# 5. reduce the total time of using iaddq by changing order -> Average CPE	8.01
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+
+##################################################################
+# You can modify this portion
+	# Loop header
+	xorq %rax,%rax		# count = 0;
+judgeLength84:
+    iaddq $-8,%rdx
+    jge unrollingLoop8
+	iaddq $4, %rdx
+	jge unrollingLoop4
+judgeLength2:
+    iaddq $2, %rdx
+    jge unrollingLoop2
+judgeLength1:
+    iaddq $2, %rdx
+    jg unrollingLoop1
+    ret
+unrollingLoop8:
+    mrmovq (%rdi),%r8
+    mrmovq 0x8(%rdi),%r9
+    mrmovq 0x10(%rdi),%r10
+    mrmovq 0x18(%rdi),%r11
+    mrmovq 0x20(%rdi),%r12
+    mrmovq 0x28(%rdi),%r13
+    mrmovq 0x30(%rdi),%r14
+    mrmovq 0x38(%rdi),%rcx
+	andq %r8, %r8		# val <= 0?
+	jle Eight_80		    # 
+#1
+Eight_81:
+    andq %r9, %r9
+    jle Eight_801
+Eight_811:
+    andq %r10, %r10
+    jle Eight_8011
+Eight_8111:
+    andq %r11, %r11
+    jle Eight_80111
+Eight_81111:
+    andq %r12, %r12
+    jle Eight_801111
+Eight_811111:
+    andq %r13, %r13
+    jle Eight_8011111
+Eight_8111111:
+    andq %r14, %r14
+    jle Eight_80111111
+Eight_81111111:
+    andq %rcx, %rcx
+    jle count7 
+    iaddq $8, %rax
+Eight8:
+    rmmovq %r8,(%rsi)
+    rmmovq %r9,0x8(%rsi)
+    rmmovq %r10,0x10(%rsi)
+    rmmovq %r11,0x18(%rsi)
+    rmmovq %r12,0x20(%rsi)
+    rmmovq %r13,0x28(%rsi)
+    rmmovq %r14,0x30(%rsi)
+    rmmovq %rcx,0x38(%rsi)
+	iaddq $64, %rdi		# src += 64
+	iaddq $64, %rsi		# dst += 64
+    jmp judgeLength84
+count7:
+    iaddq $7, %rax
+    jmp Eight8
+#2
+Eight_80:
+    andq %r9, %r9
+    jle Eight_800
+Eight_801:
+    andq %r10, %r10
+    jle Eight_8001
+Eight_8011:
+    andq %r11, %r11
+    jle Eight_80011
+Eight_80111:
+    andq %r12, %r12
+    jle Eight_800111
+Eight_801111:
+    andq %r13, %r13
+    jle Eight_8001111
+Eight_8011111:
+    andq %r14, %r14
+    jle Eight_80011111
+Eight_80111111:
+    andq %rcx, %rcx
+    jle count6 
+    jmp count7
+count6:
+    iaddq $6, %rax
+    jmp Eight8
+#3
+Eight_800:
+    andq %r10, %r10
+    jle Eight_8000
+Eight_8001:
+    andq %r11, %r11
+    jle Eight_80001
+Eight_80011:
+    andq %r12, %r12
+    jle Eight_800011
+Eight_800111:
+    andq %r13, %r13
+    jle Eight_8000111
+Eight_8001111:
+    andq %r14, %r14
+    jle Eight_80001111
+Eight_80011111:
+    andq %rcx, %rcx
+    jle count5
+    jmp count6
+count5:
+    iaddq $5, %rax
+    jmp Eight8
+#4
+Eight_8000:
+    andq %r11, %r11
+    jle Eight_80000
+Eight_80001:
+    andq %r12, %r12
+    jle Eight_800001
+Eight_800011:
+    andq %r13, %r13
+    jle Eight_8000011
+Eight_8000111:
+    andq %r14, %r14
+    jle Eight_80000111
+Eight_80001111:
+    andq %rcx, %rcx
+    jle count4
+    jmp count5
+count4:
+    iaddq $4, %rax
+    jmp Eight8
+#5
+Eight_80000:
+    andq %r12, %r12
+    jle Eight_800000
+Eight_800001:
+    andq %r13, %r13
+    jle Eight_8000001
+Eight_8000011:
+    andq %r14, %r14
+    jle Eight_80000011
+Eight_80000111:
+    andq %rcx, %rcx
+    jle count3
+    jmp count4
+count3:
+    iaddq $3, %rax
+    jmp Eight8
+#6
+Eight_800000:
+    andq %r13, %r13
+    jle Eight_8000000
+Eight_8000001:
+    andq %r14, %r14
+    jle Eight_80000001
+Eight_80000011:
+    andq %rcx, %rcx
+    jle count2
+    jmp count3
+count2:
+    iaddq $2, %rax
+    jmp Eight8
+#7
+Eight_8000000:
+    andq %r14, %r14
+    jle Eight_80000000
+Eight_80000001:
+    andq %rcx, %rcx
+    jle count1
+    jmp count2
+count1:
+    iaddq $1, %rax
+    jmp Eight8
+#8
+Eight_80000000:
+    andq %rcx, %rcx
+    jle Eight8
+    jmp count1
+
+unrollingLoop4:
+    mrmovq (%rdi),%r8
+    mrmovq 0x8(%rdi),%r9
+    mrmovq 0x10(%rdi),%r10
+    mrmovq 0x18(%rdi),%r11
+    andq %r8, %r8
+    jle One4
+    iaddq $1,%rax
+One4:
+    andq %r9, %r9
+    jle Two4
+    iaddq $1, %rax
+Two4:
+    andq %r10, %r10
+    jle Three4
+    iaddq $1, %rax
+Three4:
+    andq %r11, %r11
+    jle Four4
+    iaddq $1, %rax
+Four4:
+    rmmovq %r8,(%rsi)
+    rmmovq %r9,0x8(%rsi)
+    rmmovq %r10,0x10(%rsi)
+    rmmovq %r11,0x18(%rsi)
+	iaddq $32, %rdi		# src += 32
+	iaddq $32, %rsi		# dst += 32
+    iaddq $-4, %rdx
+    jmp judgeLength2
+unrollingLoop2:
+    mrmovq (%rdi),%r8
+    mrmovq 0x8(%rdi),%r9
+    andq %r8, %r8
+    jle One2
+    iaddq $1,%rax
+One2:
+    andq %r9, %r9
+    jle Two2
+    iaddq $1, %rax
+Two2:
+    rmmovq %r8,(%rsi)
+    rmmovq %r9,0x8(%rsi)
+	iaddq $16, %rdi		# src += 16
+	iaddq $16, %rsi		# dst += 16
+    iaddq $-2, %rdx
+    jmp judgeLength1
+unrollingLoop1:
+    mrmovq (%rdi), %r10	# read val from src...
+	andq %r10, %r10		# val <= 0?
+    rmmovq %r10, (%rsi)	# ...and store it to dst
+	jle Done		    # if so, goto Done:
+	iaddq $1, %rax		# count++
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */
+

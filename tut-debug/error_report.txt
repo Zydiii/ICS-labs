@@ -1,0 +1,111 @@
+/*
+ * BUG#0
+ * description: 
+     miss semicolon
+ * location: 
+ *   int a = 10  (line 18)
+ * evidence: 
+ *   test.c:19: error: two or more data types in declaration specifiers
+ */
+
+BUG#1
+description:
+miss a header file
+#include <stdio.h>
+location:
+line 42
+evidence:
+gen_sort.c:187:2: error: unknown type name ‘FILE’
+
+
+BUG#2
+description:
+rec_len wrong
+enum { rec_len = key_len + pad_len + recno_len}; 
+location:
+line 50
+evidence:
+wrong output
+
+
+BUG#3
+description:
+miss semicolon
+enum { buf_size = buf_nrec * 100 };
+location:
+line 53
+evidence:
+gen_sort.c:54:9: error: expected ‘;’, identifier or ‘(’ before ‘struct’
+
+
+BUG#4
+description:
+wrong type identifier
+gen_rec(record_t *rec)
+location:
+line 115
+evidence:
+gen_sort.c:114:9: error: unknown type name ‘record’
+
+
+BUG#5
+description:
+j not i
+for (j = 0; j < 10; j++ )
+location:
+line 126
+evidence:
+segamentation fault
+
+
+BUG#6
+description:
+wrong buf size to malloc
+char *buf = (char *)malloc(buf_size * rec_max) ; 
+location:
+line 182
+evidence:
+segamentation fault
+
+
+
+BUG#7
+description:
+wrong mode for opening file
+FILE *file = fopen(fn, "w");
+location:
+line 188
+evidence:
+unable to open file
+
+
+
+BUG#8
+description:
+miss }
+if (!file){  
+location:
+line 189
+evidence:
+gen_sort.c:198:2: error: expected identifier or ‘(’ before ‘while’
+
+
+
+BUG#9
+description:
+miss semicolon
+record_t;
+location:
+line 59
+evidence:
+gen_sort.c:60:1: error: expected ‘=’, ‘,’, ‘;’, ‘asm’ or ‘__attribute__’ before ‘static’
+
+
+
+BUG#10
+description:
+cnt < buf_nrec
+location:
+line 148
+evidence:
+segamentation fault

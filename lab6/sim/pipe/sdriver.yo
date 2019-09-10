@@ -1,0 +1,297 @@
+                            | #######################################################################
+                            | # Test for copying block of size 4;
+                            | #######################################################################
+0x000:                      | 	.pos 0
+0x000: 30f4e004000000000000 | main:	irmovq Stack, %rsp  	# Set up stack pointer
+                            | 
+                            | 	# Set up arguments for copy function and then invoke it
+0x00a: 30f20400000000000000 | 	irmovq $4, %rdx		# src and dst have 4 elements
+0x014: 30f63804000000000000 | 	irmovq dest, %rsi	# dst array
+0x01e: 30f70004000000000000 | 	irmovq src, %rdi	# src array
+0x028: 803200000000000000   | 	call ncopy		 
+0x031: 00                   | 	halt			# should halt with num nonzeros in %rax
+0x032:                      | StartFun:
+                            | #/* $begin ncopy-ys */
+                            | ##################################################################
+                            | # ncopy.ys - Copy a src block of len words to dst.
+                            | # Return the number of positive words (>0) contained in src.
+                            | #
+                            | # Include your name and ID here.
+                            | # Zhang Yuandi
+                            | # 517030910230
+                            | # Describe how and why you modified the baseline code.
+                            | # 1. use iaddq -> Average CPE	12.70
+                            | # 2. loop unrolling 8 -> Average CPE	9.16
+                            | # 3. loop unrolling 8 4 2 1 -> Average CPE	9.00
+                            | # 4. loop unrolling >=8 -> >=4 -> >=2 -> 1  Remove unnecessary parts of jump -> Average CPE	8.24
+                            | # 5. reduce the total time of using iaddq by changing order -> Average CPE	8.01
+                            | # 6. improve add by avoiding repeated iaddq $1,%rax  ->  Average CPE	7.87
+                            | # 7. improve the remaining part  ->  Average CPE		7.69
+                            | # 8. remove xorq %rax,%rax  ->  Average CPE	7.64
+                            | ##################################################################
+                            | # Do not modify this portion
+                            | # Function prologue.
+                            | # %rdi = src, %rsi = dst, %rdx = len
+0x032:                      | ncopy:
+                            | 
+                            | ##################################################################
+                            | # You can modify this portion
+                            | 	# Loop header
+                            | 
+0x032: c0f2f8ffffffffffffff |     iaddq $-8, %rdx
+0x03c: 723003000000000000   |     jl Remain
+                            | 
+0x045:                      | unrollingLoop8:
+0x045: 50870000000000000000 |     mrmovq (%rdi),%r8
+0x04f: 50970800000000000000 |     mrmovq 0x8(%rdi),%r9
+0x059: 50a71000000000000000 |     mrmovq 0x10(%rdi),%r10
+0x063: 50b71800000000000000 |     mrmovq 0x18(%rdi),%r11
+0x06d: 50c72000000000000000 |     mrmovq 0x20(%rdi),%r12
+0x077: 50d72800000000000000 |     mrmovq 0x28(%rdi),%r13
+0x081: 50e73000000000000000 |     mrmovq 0x30(%rdi),%r14
+0x08b: 50173800000000000000 |     mrmovq 0x38(%rdi),%rcx
+                            | 
+0x095: 6288                 | 	andq %r8, %r8
+0x097: 711301000000000000   | 	jle Eight_0 
+                            | #1
+0x0a0:                      | Eight_1:
+0x0a0: 6299                 |     andq %r9, %r9
+0x0a2: 711e01000000000000   |     jle Eight_01
+0x0ab:                      | Eight_11:
+0x0ab: 62aa                 |     andq %r10, %r10
+0x0ad: 712901000000000000   |     jle Eight_011
+0x0b6:                      | Eight_111:
+0x0b6: 62bb                 |     andq %r11, %r11
+0x0b8: 713401000000000000   |     jle Eight_0111
+0x0c1:                      | Eight_1111:
+0x0c1: 62cc                 |     andq %r12, %r12
+0x0c3: 713f01000000000000   |     jle Eight_01111
+0x0cc:                      | Eight_11111:
+0x0cc: 62dd                 |     andq %r13, %r13
+0x0ce: 714a01000000000000   |     jle Eight_011111
+0x0d7:                      | Eight_111111:
+0x0d7: 62ee                 |     andq %r14, %r14
+0x0d9: 715501000000000000   |     jle Eight_0111111
+0x0e2:                      | Eight_1111111:
+0x0e2: 6211                 |     andq %rcx, %rcx
+0x0e4: 710001000000000000   |     jle count7 
+0x0ed: c0f00800000000000000 |     iaddq $8, %rax
+0x0f7: 70b902000000000000   |     jmp Eight8
+                            | 
+0x100:                      | count7:
+0x100: c0f00700000000000000 |     iaddq $7, %rax
+0x10a: 70b902000000000000   |     jmp Eight8
+                            | #2
+0x113:                      | Eight_0:
+0x113: 6299                 |     andq %r9, %r9
+0x115: 717301000000000000   |     jle Eight_00
+0x11e:                      | Eight_01:
+0x11e: 62aa                 |     andq %r10, %r10
+0x120: 717e01000000000000   |     jle Eight_001
+0x129:                      | Eight_011:
+0x129: 62bb                 |     andq %r11, %r11
+0x12b: 718901000000000000   |     jle Eight_0011
+0x134:                      | Eight_0111:
+0x134: 62cc                 |     andq %r12, %r12
+0x136: 719401000000000000   |     jle Eight_00111
+0x13f:                      | Eight_01111:
+0x13f: 62dd                 |     andq %r13, %r13
+0x141: 719f01000000000000   |     jle Eight_001111
+0x14a:                      | Eight_011111:
+0x14a: 62ee                 |     andq %r14, %r14
+0x14c: 71aa01000000000000   |     jle Eight_0011111
+0x155:                      | Eight_0111111:
+0x155: 6211                 |     andq %rcx, %rcx 
+0x157: 760001000000000000   |     jg count7
+0x160:                      | count6:
+0x160: c0f00600000000000000 |     iaddq $6, %rax
+0x16a: 70b902000000000000   |     jmp Eight8
+                            | #3
+0x173:                      | Eight_00:
+0x173: 62aa                 |     andq %r10, %r10
+0x175: 71c801000000000000   |     jle Eight_000
+0x17e:                      | Eight_001:
+0x17e: 62bb                 |     andq %r11, %r11
+0x180: 71d301000000000000   |     jle Eight_0001
+0x189:                      | Eight_0011:
+0x189: 62cc                 |     andq %r12, %r12
+0x18b: 71de01000000000000   |     jle Eight_00011
+0x194:                      | Eight_00111:
+0x194: 62dd                 |     andq %r13, %r13
+0x196: 71e901000000000000   |     jle Eight_000111
+0x19f:                      | Eight_001111:
+0x19f: 62ee                 |     andq %r14, %r14
+0x1a1: 71f401000000000000   |     jle Eight_0001111
+0x1aa:                      | Eight_0011111:
+0x1aa: 6211                 |     andq %rcx, %rcx
+0x1ac: 766001000000000000   |     jg count6
+0x1b5:                      | count5:
+0x1b5: c0f00500000000000000 |     iaddq $5, %rax
+0x1bf: 70b902000000000000   |     jmp Eight8
+                            | #4
+0x1c8:                      | Eight_000:
+0x1c8: 62bb                 |     andq %r11, %r11
+0x1ca: 711202000000000000   |     jle Eight_0000
+0x1d3:                      | Eight_0001:
+0x1d3: 62cc                 |     andq %r12, %r12
+0x1d5: 711d02000000000000   |     jle Eight_00001
+0x1de:                      | Eight_00011:
+0x1de: 62dd                 |     andq %r13, %r13
+0x1e0: 712802000000000000   |     jle Eight_000011
+0x1e9:                      | Eight_000111:
+0x1e9: 62ee                 |     andq %r14, %r14
+0x1eb: 713302000000000000   |     jle Eight_0000111
+0x1f4:                      | Eight_0001111:
+0x1f4: 6211                 |     andq %rcx, %rcx
+0x1f6: 76b501000000000000   |     jg count5
+0x1ff:                      | count4:
+0x1ff: c0f00400000000000000 |     iaddq $4, %rax
+0x209: 70b902000000000000   |     jmp Eight8
+                            | #5
+0x212:                      | Eight_0000:
+0x212: 62cc                 |     andq %r12, %r12
+0x214: 715102000000000000   |     jle Eight_00000
+0x21d:                      | Eight_00001:
+0x21d: 62dd                 |     andq %r13, %r13
+0x21f: 715c02000000000000   |     jle Eight_000001
+0x228:                      | Eight_000011:
+0x228: 62ee                 |     andq %r14, %r14
+0x22a: 716702000000000000   |     jle Eight_0000011
+0x233:                      | Eight_0000111:
+0x233: 6211                 |     andq %rcx, %rcx
+0x235: 76ff01000000000000   |     jg count4
+0x23e:                      | count3:
+0x23e: c0f00300000000000000 |     iaddq $3, %rax
+0x248: 70b902000000000000   |     jmp Eight8
+                            | #6
+0x251:                      | Eight_00000:
+0x251: 62dd                 |     andq %r13, %r13
+0x253: 718502000000000000   |     jle Eight_000000
+0x25c:                      | Eight_000001:
+0x25c: 62ee                 |     andq %r14, %r14
+0x25e: 719002000000000000   |     jle Eight_0000001
+0x267:                      | Eight_0000011:
+0x267: 6211                 |     andq %rcx, %rcx
+0x269: 763e02000000000000   |     jg count3
+0x272:                      | count2:
+0x272: c0f00200000000000000 |     iaddq $2, %rax
+0x27c: 70b902000000000000   |     jmp Eight8
+                            | #7
+0x285:                      | Eight_000000:
+0x285: 62ee                 |     andq %r14, %r14
+0x287: 71ae02000000000000   |     jle Eight_0000000
+0x290:                      | Eight_0000001:
+0x290: 6211                 |     andq %rcx, %rcx
+0x292: 767202000000000000   |     jg count2
+0x29b:                      | count1:
+0x29b: c0f00100000000000000 |     iaddq $1, %rax
+0x2a5: 70b902000000000000   |     jmp Eight8
+                            | #8
+0x2ae:                      | Eight_0000000:
+0x2ae: 6211                 |     andq %rcx, %rcx
+0x2b0: 769b02000000000000   |     jg count1
+                            | 
+0x2b9:                      | Eight8:
+0x2b9: 40860000000000000000 |     rmmovq %r8,(%rsi)
+0x2c3: 40960800000000000000 |     rmmovq %r9,0x8(%rsi)
+0x2cd: 40a61000000000000000 |     rmmovq %r10,0x10(%rsi)
+0x2d7: 40b61800000000000000 |     rmmovq %r11,0x18(%rsi)
+0x2e1: 40c62000000000000000 |     rmmovq %r12,0x20(%rsi)
+0x2eb: 40d62800000000000000 |     rmmovq %r13,0x28(%rsi)
+0x2f5: 40e63000000000000000 |     rmmovq %r14,0x30(%rsi)
+0x2ff: 40163800000000000000 |     rmmovq %rcx,0x38(%rsi)
+                            |     
+0x309: c0f74000000000000000 | 	iaddq $64, %rdi		# src += 64
+0x313: c0f64000000000000000 | 	iaddq $64, %rsi		# dst += 64
+0x31d: c0f2f8ffffffffffffff |     iaddq $-8, %rdx
+0x327: 754500000000000000   |     jge unrollingLoop8
+                            | 
+                            | #0~7
+0x330:                      | Remain:
+0x330: c0f20600000000000000 | 	iaddq $6, %rdx 
+0x33a: 72bc03000000000000   | 	jl Out
+                            | 
+0x343:                      | unrollingLoop2:
+0x343: 50870000000000000000 | 	mrmovq (%rdi), %r8
+0x34d: 50970800000000000000 | 	mrmovq 8(%rdi), %r9
+0x357: 6288                 | 	andq %r8, %r8
+0x359: 716c03000000000000   | 	jle unrollingLoop
+0x362: c0f00100000000000000 | 	iaddq $1, %rax
+                            | 
+0x36c:                      | unrollingLoop:
+0x36c: 6299                 | 	andq %r9, %r9
+0x36e: 718103000000000000   | 	jle Npos
+0x377: c0f00100000000000000 | 	iaddq $1, %rax
+                            | 
+0x381:                      | Npos:
+0x381: 40860000000000000000 | 	rmmovq %r8, (%rsi)
+0x38b: 40960800000000000000 | 	rmmovq %r9, 8(%rsi)
+0x395: c0f71000000000000000 | 	iaddq $16, %rdi
+0x39f: c0f61000000000000000 | 	iaddq $16, %rsi
+0x3a9: c0f2feffffffffffffff | 	iaddq $-2, %rdx
+0x3b3: 754303000000000000   | 	jge unrollingLoop2
+                            | 
+                            | #0-1
+0x3bc:                      | Out:
+0x3bc: c0f20100000000000000 | 	iaddq $1, %rdx
+0x3c6: 72f803000000000000   | 	jl Done
+0x3cf: 50870000000000000000 |     mrmovq (%rdi), %r8
+0x3d9: 6288                 | 	andq %r8, %r8
+0x3db: 40860000000000000000 |     rmmovq %r8, (%rsi)
+0x3e5: 71f803000000000000   |     jle Done
+0x3ee: c0f00100000000000000 |     iaddq $1, %rax
+                            | 
+                            | ##################################################################
+                            | # Do not modify the following section of code
+                            | # Function epilogue.
+0x3f8:                      | Done:
+0x3f8: 90                   | 	ret
+                            | ##################################################################
+                            | # Keep the following label at the end of your function
+                            | 
+0x3f9:                      | End:
+                            | #/* $end ncopy-ys */
+0x3f9:                      | EndFun:
+                            | 
+                            | ###############################
+                            | # Source and destination blocks 
+                            | ###############################
+0x400:                      | 	.align 8
+0x400:                      | src:
+0x400: ffffffffffffffff     | 	.quad -1
+0x408: 0200000000000000     | 	.quad 2
+0x410: fdffffffffffffff     | 	.quad -3
+0x418: 0400000000000000     | 	.quad 4
+0x420: fadebc0000000000     | 	.quad 0xbcdefa # This shouldn't get moved
+                            | 
+0x430:                      | 	.align 16
+0x430:                      | Predest:
+0x430: fadebc0000000000     | 	.quad 0xbcdefa
+0x438:                      | dest:
+0x438: abefcd0000000000     | 	.quad 0xcdefab
+0x440: abefcd0000000000     | 	.quad 0xcdefab
+0x448: abefcd0000000000     | 	.quad 0xcdefab
+0x450: abefcd0000000000     | 	.quad 0xcdefab
+0x458:                      | Postdest:
+0x458: bcfade0000000000     | 	.quad 0xdefabc
+                            | 
+0x460:                      | .align 8
+                            | # Run time stack
+0x460: 0000000000000000     | 	.quad 0
+0x468: 0000000000000000     | 	.quad 0
+0x470: 0000000000000000     | 	.quad 0
+0x478: 0000000000000000     | 	.quad 0
+0x480: 0000000000000000     | 	.quad 0
+0x488: 0000000000000000     | 	.quad 0
+0x490: 0000000000000000     | 	.quad 0
+0x498: 0000000000000000     | 	.quad 0
+0x4a0: 0000000000000000     | 	.quad 0
+0x4a8: 0000000000000000     | 	.quad 0
+0x4b0: 0000000000000000     | 	.quad 0
+0x4b8: 0000000000000000     | 	.quad 0
+0x4c0: 0000000000000000     | 	.quad 0
+0x4c8: 0000000000000000     | 	.quad 0
+0x4d0: 0000000000000000     | 	.quad 0
+0x4d8: 0000000000000000     | 	.quad 0
+                            | 
+0x4e0:                      | Stack:

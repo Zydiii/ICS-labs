@@ -1,0 +1,159 @@
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Include your name and ID here.
+# Zhang Yuandi
+# 517030910230
+# Describe how and why you modified the baseline code.
+# 1. use iaddq -> Average CPE	12.70
+# 2. loop unrolling 8 -> Average CPE	9.16
+# 3. loop unrolling 8 4 2 1 -> 
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+
+##################################################################
+# You can modify this portion
+	# Loop header
+	xorq %rax,%rax		# count = 0;
+judgeLength8:
+    iaddq $-8,%rdx
+    jge unrollingLoop8
+	iaddq $8, %rdx
+	jmp judgeLength4
+unrollingLoop8:
+    mrmovq (%rdi),%r8
+    mrmovq 0x8(%rdi),%r9
+    mrmovq 0x10(%rdi),%r10
+    mrmovq 0x18(%rdi),%r11
+    mrmovq 0x20(%rdi),%r12
+    mrmovq 0x28(%rdi),%r13
+    mrmovq 0x30(%rdi),%r14
+    mrmovq 0x38(%rdi),%rcx
+    rmmovq %r8,(%rsi)
+    rmmovq %r9,0x8(%rsi)
+    rmmovq %r10,0x10(%rsi)
+    rmmovq %r11,0x18(%rsi)
+    rmmovq %r12,0x20(%rsi)
+    rmmovq %r13,0x28(%rsi)
+    rmmovq %r14,0x30(%rsi)
+    rmmovq %rcx,0x38(%rsi)
+	andq %r8, %r8		# val <= 0?
+	jle One8		    # if so, goto One:
+    iaddq $1, %rax      # count++
+One8:
+    andq %r9, %r9
+    jle Two8
+    iaddq $1,%rax
+Two8:
+    andq %r10, %r10
+    jle Three8
+    iaddq $1, %rax
+Three8:
+    andq %r11, %r11
+    jle Four8
+    iaddq $1, %rax
+Four8:
+    andq %r12, %r12
+    jle Five8
+    iaddq $1, %rax
+Five8:
+    andq %r13, %r13
+    jle Six8
+    iaddq $1, %rax
+Six8:
+    andq %r14, %r14
+    jle Seven8
+    iaddq $1, %rax
+Seven8:
+    andq %rcx, %rcx
+    jle Eight8 
+    iaddq $1, %rax
+Eight8:
+	iaddq $64, %rdi		# src += 64
+	iaddq $64, %rsi		# dst += 64
+    jmp judgeLength8
+judgeLength4:	
+    iaddq $-4, %rdx
+    jge unrollingLoop4
+	iaddq $4, %rdx
+	jmp judgeLength2
+unrollingLoop4:
+    mrmovq (%rdi),%r8
+    mrmovq 0x8(%rdi),%r9
+    mrmovq 0x10(%rdi),%r10
+    mrmovq 0x18(%rdi),%r11
+    rmmovq %r8,(%rsi)
+    rmmovq %r9,0x8(%rsi)
+    rmmovq %r10,0x10(%rsi)
+    rmmovq %r11,0x18(%rsi)
+One4:
+    andq %r8, %r8
+    jle Two4
+    iaddq $1,%rax
+Two4:
+    andq %r9, %r9
+    jle Three4
+    iaddq $1, %rax
+Three4:
+    andq %r10, %r10
+    jle Four4
+    iaddq $1, %rax
+Four4:
+    andq %r11, %r11
+    jle Five4
+    iaddq $1, %rax
+Five4:
+	iaddq $32, %rdi		# src += 32
+	iaddq $32, %rsi		# dst += 32
+    jmp judgeLength4
+judgeLength2:
+    iaddq $-2, %rdx
+    jge unrollingLoop2
+	iaddq $2, %rdx
+	jmp judgeLength1
+unrollingLoop2:
+    mrmovq (%rdi),%r8
+    mrmovq 0x8(%rdi),%r9
+    rmmovq %r8,(%rsi)
+    rmmovq %r9,0x8(%rsi)
+One2:
+    andq %r8, %r8
+    jle Two2
+    iaddq $1,%rax
+Two2:
+    andq %r9, %r9
+    jle Three2
+    iaddq $1, %rax
+Three2:
+	iaddq $16, %rdi		# src += 16
+	iaddq $16, %rsi		# dst += 16
+    jmp judgeLength2
+judgeLength1:
+    iaddq $-1, %rdx
+    jge unrollingLoop1
+	jmp Done
+unrollingLoop1:
+    mrmovq (%rdi), %r10	# read val from src...
+	rmmovq %r10, (%rsi)	# ...and store it to dst
+	andq %r10, %r10		# val <= 0?
+	jle Npos		# if so, goto Npos:
+	iaddq $1, %rax		# count++
+Npos:	
+	iaddq $8, %rdi		# src+=8
+	iaddq $8, %rsi		# dst+=8
+	jmp judgeLength1	# if so, goto Loop:
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */
+
